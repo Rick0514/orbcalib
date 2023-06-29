@@ -41,7 +41,7 @@ class Viewer
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Viewer(System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Tracking *pTracking, const string &strSettingPath, Settings* settings);
+    Viewer(System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Tracking *pTracking, const string &strSettingPath, Settings* settings, const string& strSequence);
 
     void newParameterLoader(Settings* settings);
 
@@ -94,6 +94,7 @@ private:
 
     bool mbStopTrack;
 
+    string msCameraName;
 };
 
 }

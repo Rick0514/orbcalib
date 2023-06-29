@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 
     if(argc != 4)
     {
-        cerr << endl << "Usage: rosrun ORB_SLAM3 RGBD path_to_vocabulary path_to_settings_1 path_to_settings_2" << endl;
+        cerr << endl << "./build/calib path_to_vocabulary path_to_settings_1 path_to_settings_2" << endl;
         ros::shutdown();
         return 1;
     }    
@@ -93,14 +93,14 @@ int main(int argc, char **argv)
 
     message_filters::Subscriber<sensor_msgs::Image> rgb_sub1(nh, "/usb_front/image", 1000);
     message_filters::Subscriber<sensor_msgs::Image> depth_sub1(nh, "/usb_front/depth/image_raw", 1000);
-    message_filters::Subscriber<sensor_msgs::Image> rgb_sub2(nh, "/usb_back/image", 1000);
-    message_filters::Subscriber<sensor_msgs::Image> depth_sub2(nh, "/usb_back/depth/image_raw", 1000);
+    message_filters::Subscriber<sensor_msgs::Image> rgb_sub2(nh, "/usb_back/image1", 1000);
+    message_filters::Subscriber<sensor_msgs::Image> depth_sub2(nh, "/usb_back/depth/image_raw1", 1000);
 
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), rgb_sub1, depth_sub1);
     sync.registerCallback(boost::bind(&ImageGrabber::GrabRGBD, &igb, _1, _2));
     message_filters::Synchronizer<sync_pol> sync2(sync_pol(10), rgb_sub2, depth_sub2);
-    sync2.registerCallback(boost::bind(&ImageGrabber::GrabRGBD,&igb2, _1, _2));
+    sync2.registerCallback(boost::bind(&ImageGrabber::GrabRGBD, &igb2, _1, _2));
 
     ros::spin();
     // Stop all threads
@@ -113,8 +113,8 @@ int main(int argc, char **argv)
     cout << "SLAM are shutdown" << endl;
     cout << "start to calib..." << endl;
 
-    CalibC2C c2c(&SLAM1, &SLAM2);
-    c2c.RunCalib();
+    // CalibC2C c2c(&SLAM1, &SLAM2);
+    // c2c.RunCalib();
     
     cout << "calib finish, exit" << endl;
 
