@@ -3,16 +3,18 @@
 #include "calib.hpp"
 #include "edge.hpp"
 
+using std::cout;
+using std::endl;
 using namespace ORB_SLAM3;
 
 CalibC2C::CalibC2C(System* src, System* dst)
 {
     // get Atlas
-    Atlas* srcAtlas = *(reinterpret_cast<Atlas**>((size_t)(src) + 16));
-    Atlas* dstAtlas = *(reinterpret_cast<Atlas**>((size_t)(src) + 16));
+    SubSystem* ssrc = static_cast<SubSystem*>(src);
+    SubSystem* sdst = static_cast<SubSystem*>(dst);
     
-    srcKFs = srcAtlas->GetAllKeyFrames();
-    mpKeyFrameDB = static_cast<SubKeyFrameDB*>(dstAtlas->GetKeyFrameDatabase());
+    srcKFs = ssrc->getAtlas()->GetAllKeyFrames();
+    mpKeyFrameDB = static_cast<SubKeyFrameDB*>(sdst->getKeyFrameDatabase());
 
     matcherBoW = new ORBmatcher(0.9, true);
     matcher = new ORBmatcher(0.75, true);
@@ -28,7 +30,7 @@ vector<KeyFrame*> CalibC2C::DetectNBestCandidates(KeyFrame* pKF, int N)
     auto orbvoc = mpKeyFrameDB->getVocabulary();
 
     list<KeyFrame*> lKFsSharingWords;
-    for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit != vend; vit++)
+    for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
     {
         list<KeyFrame*> &lKFs = invertedFile[vit->first];
 
@@ -49,6 +51,7 @@ vector<KeyFrame*> CalibC2C::DetectNBestCandidates(KeyFrame* pKF, int N)
 
     if(lKFsSharingWords.empty())    return res;
 
+    cout << "share same words kf size: " << lKFsSharingWords.size() << endl;
     // find threshold and filter them
     auto it = std::max_element(lKFsSharingWords.begin(), lKFsSharingWords.end(), [](KeyFrame* a, KeyFrame* b){
         return a->mnPlaceRecognitionWords < b->mnPlaceRecognitionWords;
@@ -68,6 +71,8 @@ vector<KeyFrame*> CalibC2C::DetectNBestCandidates(KeyFrame* pKF, int N)
         }
     }
     if(lScoreAndMatch.empty())  return res;
+
+    cout << "after filter words less than 0.5 max size: " << lScoreAndMatch.size() << endl;
 
     // Lets now accumulate score by covisibility
     list<pair<float, KeyFrame*>> lAccScoreAndMatch;
@@ -483,9 +488,12 @@ void CalibC2C::RunCalib()
     int bestMatchesNum = 0;
     g2o::Sim3 g2oS12;
 
+    cout << "front camera kf size: " << srcKFs.size() << endl;
+
     for(auto&& kf : srcKFs)
     {
         auto cand = DetectNBestCandidates(kf, bestCandNum);
+        cout << "detect cand size: " << cand.size() << endl;
 
         KeyFrame* matchedKF;
         g2o::Sim3 gcw2;
@@ -508,6 +516,10 @@ void CalibC2C::RunCalib()
         }
     }
 
+    if(rsrc.empty()){
+        cout << "no common features detected!!" << endl;
+        return;
+    }
     // global optimization
     int inliers = OptimizeSim3ForCalibr(rsrc, rdst, mmps, g2oS12, 10, false);
 }

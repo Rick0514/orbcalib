@@ -18,7 +18,7 @@ public:
     
     SubKeyFrameDB() = default;
 
-    const InvertedFileType& getInvertedFile() { return mvInvertedFile; }
+    InvertedFileType& getInvertedFile() { return mvInvertedFile; }
     const ORBVocabulary* getVocabulary() { return mpVoc; }
 };
 
@@ -33,6 +33,16 @@ public:
     {
         return DetectCommonRegionsFromLastKF(pCurrentKF, pMatchedKF, gScw, nNumProjMatches, vpMPs, vpMatchedMPs);
     }
+};
+
+class SubSystem : public System
+{
+public:
+    SubSystem(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true, const int initFr = 0, const string &strSequence = std::string())
+        : System(strVocFile, strSettingsFile, sensor, bUseViewer, initFr, strSequence) {}
+
+    KeyFrameDatabase* getKeyFrameDatabase() { return mpKeyFrameDatabase; }
+    Atlas* getAtlas() { return mpAtlas; }
 };
 
 class CalibC2C

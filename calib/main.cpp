@@ -113,8 +113,8 @@ int main(int argc, char **argv)
     cout << "SLAM are shutdown" << endl;
     cout << "start to calib..." << endl;
 
-    // CalibC2C c2c(&SLAM1, &SLAM2);
-    // c2c.RunCalib();
+    CalibC2C c2c(&SLAM1, &SLAM2);
+    c2c.RunCalib();
     
     cout << "calib finish, exit" << endl;
 
