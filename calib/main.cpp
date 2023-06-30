@@ -93,8 +93,8 @@ int main(int argc, char **argv)
 
     message_filters::Subscriber<sensor_msgs::Image> rgb_sub1(nh, "/usb_front/image", 1000);
     message_filters::Subscriber<sensor_msgs::Image> depth_sub1(nh, "/usb_front/depth/image_raw", 1000);
-    message_filters::Subscriber<sensor_msgs::Image> rgb_sub2(nh, "/usb_back/image1", 1000);
-    message_filters::Subscriber<sensor_msgs::Image> depth_sub2(nh, "/usb_back/depth/image_raw1", 1000);
+    message_filters::Subscriber<sensor_msgs::Image> rgb_sub2(nh, "/usb_back/image", 1000);
+    message_filters::Subscriber<sensor_msgs::Image> depth_sub2(nh, "/usb_back/depth/image_raw", 1000);
 
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> sync_pol;
     message_filters::Synchronizer<sync_pol> sync(sync_pol(10), rgb_sub1, depth_sub1);

@@ -164,6 +164,7 @@ void Viewer::Run()
     mbFinished = false;
     mbStopped = false;
 
+    // modify: for 2 viewer
     pangolin::CreateWindowAndBind(msCameraName + " ORB-SLAM3: Map Viewer",1024,768);
 
     // 3D Mouse handler requires depth testing to be enabled
@@ -204,6 +205,7 @@ void Viewer::Run()
     Twc.SetIdentity();
     pangolin::OpenGlMatrix Ow; // Oriented with g in the z axis
     Ow.SetIdentity();
+    // modify: for 2 viewer
     string cvWinName = msCameraName + " ORB-SLAM3: Current Frame";
     cv::namedWindow(cvWinName);
 
@@ -335,7 +337,7 @@ void Viewer::Run()
             int height = toShow.rows * mImageViewerScale;
             cv::resize(toShow, toShow, cv::Size(width, height));
         }
-
+        // modify: for 2 viewer
         cv::imshow(cvWinName,toShow);
         cv::waitKey(mT);
 
