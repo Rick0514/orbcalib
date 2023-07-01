@@ -83,9 +83,27 @@ int main(int argc, char **argv)
         return 1;
     }    
 
+    // read config
+    int v1, v2;
+    {
+        cv::FileStorage fsSettings1(argv[2], cv::FileStorage::READ);
+        cv::FileStorage fsSettings2(argv[3], cv::FileStorage::READ);
+        v1 = static_cast<int>(fsSettings1["Viewer.Enable"]);
+        v2 = static_cast<int>(fsSettings2["Viewer.Enable"]);
+    }
+
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM1(argv[1], argv[2], ORB_SLAM3::System::RGBD, true, 0, "Camera 1");
-    ORB_SLAM3::System SLAM2(argv[1], argv[3], ORB_SLAM3::System::RGBD, true, 0, "Camera 2");
+    ORB_SLAM3::System SLAM1(argv[1], argv[2], ORB_SLAM3::System::RGBD, v1, 0, "Camera 1");
+    ORB_SLAM3::System SLAM2(argv[1], argv[3], ORB_SLAM3::System::RGBD, v2, 0, "Camera 2");
+
+    if(!v1 && !v2){
+        cout << "atlas are loaded!!" << endl;
+        cout << "start to calib..." << endl;
+        CalibC2C c2c(&SLAM1, &SLAM2);
+        c2c.RunCalib();        
+        cout << "calib finish, exit" << endl;
+        return 0;
+    }
 
     ImageGrabber igb(&SLAM1);
     ImageGrabber igb2(&SLAM2);
@@ -111,12 +129,6 @@ int main(int argc, char **argv)
     // SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
     ros::shutdown();
     cout << "SLAM are shutdown" << endl;
-    cout << "start to calib..." << endl;
-
-    CalibC2C c2c(&SLAM1, &SLAM2);
-    c2c.RunCalib();
-    
-    cout << "calib finish, exit" << endl;
 
     return 0;
 }

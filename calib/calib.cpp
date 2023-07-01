@@ -1,5 +1,4 @@
 #include "Sim3Solver.h"
-#include "Atlas.h"
 #include "calib.hpp"
 #include "edge.hpp"
 
@@ -13,7 +12,9 @@ CalibC2C::CalibC2C(System* src, System* dst)
     SubSystem* ssrc = static_cast<SubSystem*>(src);
     SubSystem* sdst = static_cast<SubSystem*>(dst);
     
-    srcKFs = ssrc->getAtlas()->GetAllKeyFrames();
+    auto atlas = static_cast<SubAtlas*>(ssrc->getAtlas());
+    atlas->setFirstCurrentMap();
+    srcKFs = atlas->GetAllKeyFrames();
     mpKeyFrameDB = static_cast<SubKeyFrameDB*>(sdst->getKeyFrameDatabase());
 
     matcherBoW = new ORBmatcher(0.9, true);

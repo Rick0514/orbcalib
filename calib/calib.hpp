@@ -7,6 +7,7 @@
 #include "G2oTypes.h"
 #include "LoopClosing.h"
 #include "System.h"
+#include "Atlas.h"
 
 using namespace ORB_SLAM3;
 
@@ -43,6 +44,15 @@ public:
 
     KeyFrameDatabase* getKeyFrameDatabase() { return mpKeyFrameDatabase; }
     Atlas* getAtlas() { return mpAtlas; }
+};
+
+class SubAtlas : public Atlas
+{
+public:
+    void setFirstCurrentMap(){
+        mpCurrentMap = *(mspMaps.begin());
+        mpCurrentMap->SetCurrentMap();
+    }
 };
 
 class CalibC2C

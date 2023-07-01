@@ -205,6 +205,7 @@ protected:
     // ORB vocabulary used for place recognition and feature matching.
     // modify: make it static
     static ORBVocabulary* mpVocabulary;
+    string msCameraName;
 
     // KeyFrame database for place recognition (relocalization and loop detection).
     KeyFrameDatabase* mpKeyFrameDatabase;

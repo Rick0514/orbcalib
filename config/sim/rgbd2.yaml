@@ -1,10 +1,10 @@
 %YAML:1.0
 
 # If the LoadFile doesn't exist, the system give a message and create a new Atlas from scratch
-# System.LoadAtlasFromFile: "Session_MH01_MH02_MH03_Mono"
+System.LoadAtlasFromFile: "atlas"
 
 # The store file is created from the current session, if a file with the same name exists it is deleted
-System.SaveAtlasToFile: "atlas"
+# System.SaveAtlasToFile: "atlas"
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!
@@ -66,7 +66,7 @@ ORBextractor.minThFAST: 10
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters
 #--------------------------------------------------------------------------------------------
-Viewer.Enable: 1
+Viewer.Enable: 0
 Viewer.KeyFrameSize: 0.05
 Viewer.KeyFrameLineWidth: 1.0
 Viewer.GraphLineWidth: 0.9

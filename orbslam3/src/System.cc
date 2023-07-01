@@ -109,7 +109,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mStrVocabularyFilePath = strVocFile;
 
     bool loadedAtlas = false;
-
+    // modify: save camera name
+    msCameraName = strSequence;
+    
     if(mStrLoadAtlasFromFile.empty())
     {
         // modify: judge whether voc is loaded
@@ -1417,6 +1419,8 @@ void System::SaveAtlas(int type){
 
         string pathSaveFileName = "./";
         pathSaveFileName = pathSaveFileName.append(mStrSaveAtlasToFile);
+        // modify: add camera name
+        pathSaveFileName += msCameraName;
         pathSaveFileName = pathSaveFileName.append(".osa");
 
         string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath,TEXT_FILE);
@@ -1456,6 +1460,8 @@ bool System::LoadAtlas(int type)
 
     string pathLoadFileName = "./";
     pathLoadFileName = pathLoadFileName.append(mStrLoadAtlasFromFile);
+    // modify: add camera name
+    pathLoadFileName += msCameraName;
     pathLoadFileName = pathLoadFileName.append(".osa");
 
     if(type == TEXT_FILE) // File text
@@ -1476,7 +1482,7 @@ bool System::LoadAtlas(int type)
     }
     else if(type == BINARY_FILE) // File binary
     {
-        cout << "Starting to read the save binary file"  << endl;
+        cout << "Starting to read the save binary file: " << pathLoadFileName << endl;
         std::ifstream ifs(pathLoadFileName, std::ios::binary);
         if(!ifs.good())
         {
