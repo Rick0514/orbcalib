@@ -73,7 +73,9 @@ vector<KeyFrame*> CalibC2C::DetectNBestCandidates(KeyFrame* pKF, int N)
     }
     if(lScoreAndMatch.empty())  return res;
 
-    cout << "after filter words less than 0.5 max size: " << lScoreAndMatch.size() << endl;
+    cout << "after filter words less than "
+    << minCommonWords << endl
+    << "size: " << lScoreAndMatch.size() << endl;
 
     // Lets now accumulate score by covisibility
     list<pair<float, KeyFrame*>> lAccScoreAndMatch;
@@ -106,10 +108,13 @@ vector<KeyFrame*> CalibC2C::DetectNBestCandidates(KeyFrame* pKF, int N)
         if(accScore > bestAccScore)   bestAccScore = accScore;
     }
 
+    cout << "find best covis group size: " << lAccScoreAndMatch.size() << endl;
+
     lAccScoreAndMatch.sort([](const pair<float, KeyFrame*>& a, const pair<float, KeyFrame*>& b){
         return a.first > b.first;
     });
     
+    // remove duplcated kf from best group
     set<KeyFrame*> duplicatedKF;
     for(auto it=lAccScoreAndMatch.begin(); it!=lAccScoreAndMatch.end(); it++)
     {
@@ -180,6 +185,7 @@ bool CalibC2C::DetectCommonRegionsFromCand(KeyFrame* pKF, vector<KeyFrame*>& vpC
                 }
             }
         }
+        cout << "search by bow get matched mp size: " << numBoWMatches << endl;
 
         // 3. solve sim3
         if(numBoWMatches >= 20){
@@ -200,6 +206,7 @@ bool CalibC2C::DetectCommonRegionsFromCand(KeyFrame* pKF, vector<KeyFrame*>& vpC
 
             if(bConverge)
             {
+                cout << "solve sim3 converged!!" << endl;
                 // 4. if sim3 is solved normally, prepare all mp from covis of MostBoWMatchedKF
                 // searchByProjection
                 vpCovKFi.clear();
@@ -230,13 +237,15 @@ bool CalibC2C::DetectCommonRegionsFromCand(KeyFrame* pKF, vector<KeyFrame*>& vpC
                 vpKeyFrameMatchedMP.assign(nMPNums, static_cast<KeyFrame*>(nullptr));
 
                 int numProjMatches = matcher->SearchByProjection(pKF, mScw, vpMapPoints, vpKeyFrames, vpMatchedMPs, vpKeyFrameMatchedMP, 8, 1.5);
+                cout << "search by projection get size: " << numProjMatches << endl;
 
                 // 5. after use searchByProjection to get more mp, optimize Scm with them
                 if(numProjMatches >= 25)
                 {
                     Eigen::Matrix<double, 7, 7> mHessian7x7;
                     int numOptMatches = Optimizer::OptimizeSim3(pKF, pKFi, vpMatchedMPs, gScm, 10, bFixedScale, mHessian7x7, true);
-
+                    cout << "optim sim3 get size: " << numOptMatches << endl;
+                    
                     // 6. when optimed Scm is found, search by projection again to get more matched points 
                     if(numOptMatches >= 10)
                     {
@@ -244,7 +253,8 @@ bool CalibC2C::DetectCommonRegionsFromCand(KeyFrame* pKF, vector<KeyFrame*>& vpC
                         vpMatchedMPs.assign(nMPNums, static_cast<MapPoint*>(nullptr));
                         // shrink search range
                         numProjMatches = matcher->SearchByProjection(pKF, mScw, vpMapPoints, vpMatchedMPs, 5, 2.0);
-                    
+                        cout << "after optim sim3 search by projection get size: " << numProjMatches << endl;
+
                         if(numProjMatches >= 40)
                         {
                             // 7. geometry validation: use covis kf of pKF to detect common regions of MostBoWMatchKF
@@ -261,6 +271,7 @@ bool CalibC2C::DetectCommonRegionsFromCand(KeyFrame* pKF, vector<KeyFrame*>& vpC
                                 bool bValid = mpLC->SubDetectCommonRegionsFromLastKF(pKFj, pMostBoWMatchesKF, gSjw, numProjMatches_j, vpMapPoints, vpMatchedMPs_j);
                                 if(bValid)  validKF++;
                             }
+                            cout << "geometry validation pass kf size: " << validKF << endl;
 
                             // 8. save best result along the iteration
                             if(nBestMatchesReproj < numProjMatches)
@@ -510,6 +521,16 @@ void CalibC2C::RunCalib()
                 g2o::Sim3 gcw1(kf->GetRotation().cast<double>(), kf->GetTranslation().cast<double>(), 1.0);
                 // w1 -> w2
                 g2oS12 = gcw2.inverse() * gcw1;
+
+                // show best g2os12
+                vector<float> euler = Converter::toEuler(Converter::toCvMat(g2oS12.rotation().toRotationMatrix()));
+                cout << "---- before final optim ----" << endl;
+                cout << "euler: ";
+                for(auto&& e : euler)   cout << e * todeg << " ";
+                cout << endl << "trans: ";
+                Eigen::Vector3d t = g2oS12.translation();
+                for(int i=0; i<3; i++)  cout << t(i) << " ";
+                cout << endl;
             }
             rsrc.push_back(kf);
             rdst.push_back(matchedKF);
@@ -523,4 +544,14 @@ void CalibC2C::RunCalib()
     }
     // global optimization
     int inliers = OptimizeSim3ForCalibr(rsrc, rdst, mmps, g2oS12, 10, false);
+    cout << "inliers size: " << inliers << endl;
+
+    vector<float> euler = Converter::toEuler(Converter::toCvMat(g2oS12.rotation().toRotationMatrix()));
+    cout << "---- final optim ----" << endl;
+    cout << "euler: ";
+    for(auto&& e : euler)   cout << e * todeg << " ";
+    cout << endl << "trans: ";
+    Eigen::Vector3d t = g2oS12.translation();
+    for(int i=0; i<3; i++)  cout << t(i) << " ";
+    cout << endl;
 }

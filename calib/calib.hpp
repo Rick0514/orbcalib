@@ -68,6 +68,8 @@ private:
     ORBmatcher* matcherBoW;
     SubLoopClosing* mpLC;
 
+    const float todeg = 180 / M_PI;
+
     const float bestCandTh = 0.75f;
     const int bestCandNum = 10;
 

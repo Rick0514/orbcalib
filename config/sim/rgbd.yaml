@@ -4,7 +4,7 @@
 # System.LoadAtlasFromFile: "Session_MH01_MH02_MH03_Mono"
 
 # The store file is created from the current session, if a file with the same name exists it is deleted
-System.SaveAtlasToFile: "atlas"
+System.SaveAtlasToFile: "atlas-fb"
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!
@@ -54,7 +54,7 @@ ORBextractor.nFeatures: 1250
 ORBextractor.scaleFactor: 1.2
 
 # ORB Extractor: Number of levels in the scale pyramid	
-ORBextractor.nLevels: 6
+ORBextractor.nLevels: 8
 
 # ORB Extractor: Fast threshold
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
