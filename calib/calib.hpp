@@ -72,7 +72,7 @@ private:
 
     const float bestCandTh = 0.75f;
     const int bestCandNum = 10;
-    const bool bFixScale = true;
+    const bool bFixScale = false;
 
 public:
     CalibC2C(System* src, System* dst);

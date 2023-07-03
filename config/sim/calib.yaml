@@ -1,0 +1,16 @@
+%YAML:1.0
+
+# slam or calib
+Mode: calib
+
+# 0 for mono
+# 1 for stero
+# 2 for rgbd
+Camera1.Type: 2
+Camera1.Image: "/usb_front/image"
+Camera1.Depth: "/usb_front/depth/image_raw"
+
+Camera2.Type: 2
+Camera2.Image: "/usb_back/image"
+Camera2.Depth: "/usb_back/depth/image_raw"
+

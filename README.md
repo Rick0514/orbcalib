@@ -20,12 +20,47 @@ cmake --build build -- -j8
 
 ### Usage
 
-1. run orbslam to save atlas first!!
+1. change ```calib.yaml``` and ```cam.yaml``` to run orbslam to save atlas first!!
+
+```yaml
+# calib.yaml
+# slam or calib
+Mode: slam
+
+# 0 for mono
+# 1 for stero
+# 2 for rgbd
+Camera1.Type: 2
+Camera1.Image: "/usb_front/image"
+Camera1.Depth: "/usb_front/depth/image_raw"
+
+Camera2.Type: 2
+Camera2.Image: "/usb_back/image"
+Camera2.Depth: "/usb_back/depth/image_raw"
+```
+
+```yaml
+# cam.yaml
+# System.LoadAtlasFromFile: "atlas"
+```
+
 ```bash
-./build/calib/calib ./Vocabulary/ORBvoc.txt config/sim/rgbd.yaml config/sim/rgbd.yaml
+./build/calib/calib ./Vocabulary/ORBvoc.txt config/sim/calib.yaml config/sim/cam.yaml config/sim/cam.yaml
 ```
 
 2. load atlas to conduct calibration!!
+
+```yaml
+# calib.yaml
+# slam or calib
+Mode: calib
+```
+
+```yaml
+# cam.yaml
+System.LoadAtlasFromFile: "atlas"
+```
+
 ```
 ./build/calib/calib ./Vocabulary/ORBvoc.txt config/sim/rgbd2.yaml config/sim/rgbd2.yaml
 ``` 
@@ -54,3 +89,8 @@ Keep in mind that we try to keep ORBSLAM3 untouched just like the original code.
 [2] https://github.com/jiejie567/SlamForCalib
 
 [3] https://github.com/UZ-SLAMLab/ORB_SLAM3/tree/master
+
+
+### Issue
+
+1. Mono mode has bug to be fixed!!
