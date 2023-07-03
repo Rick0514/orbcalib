@@ -4,7 +4,7 @@
 # System.LoadAtlasFromFile: "Session_MH01_MH02_MH03_Mono"
 
 # The store file is created from the current session, if a file with the same name exists it is deleted
-System.SaveAtlasToFile: "atlas-fb"
+System.SaveAtlasToFile: "atlas"
 
 #--------------------------------------------------------------------------------------------
 # Camera Parameters. Adjust them!

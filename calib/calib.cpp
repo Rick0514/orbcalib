@@ -6,15 +6,21 @@ using std::cout;
 using std::endl;
 using namespace ORB_SLAM3;
 
+const float todeg = 180 / M_PI;
+
 CalibC2C::CalibC2C(System* src, System* dst)
 {
     // get Atlas
     SubSystem* ssrc = static_cast<SubSystem*>(src);
     SubSystem* sdst = static_cast<SubSystem*>(dst);
     
-    auto atlas = static_cast<SubAtlas*>(ssrc->getAtlas());
-    atlas->setFirstCurrentMap();
-    srcKFs = atlas->GetAllKeyFrames();
+    auto srcAtlas = static_cast<SubAtlas*>(ssrc->getAtlas());
+    auto dstAtlas = static_cast<SubAtlas*>(sdst->getAtlas());
+    srcAtlas->setFirstCurrentMap();
+    dstAtlas->setFirstCurrentMap();
+    srcKFs = srcAtlas->GetAllKeyFrames();
+    dstKFs = dstAtlas->GetAllKeyFrames();
+
     mpKeyFrameDB = static_cast<SubKeyFrameDB*>(sdst->getKeyFrameDatabase());
 
     matcherBoW = new ORBmatcher(0.9, true);
@@ -132,10 +138,10 @@ vector<KeyFrame*> CalibC2C::DetectNBestCandidates(KeyFrame* pKF, int N)
     return res;
 }
 
+// vvMPs is expressed at frame of Cand
 bool CalibC2C::DetectCommonRegionsFromCand(KeyFrame* pKF, vector<KeyFrame*>& vpCand, KeyFrame* &pMatchedKF2, g2o::Sim3 &g2oScw,
         int& bestMatchesReprojNum, vector<MapPoint*> &vpMPs, vector<MapPoint*> &vpMatchedMPs)
 {
-
     KeyFrame* pBestMatchedKF;
     int nBestMatchesReproj = 0;
     int nBestNumCoindicendes = 0;
@@ -245,7 +251,7 @@ bool CalibC2C::DetectCommonRegionsFromCand(KeyFrame* pKF, vector<KeyFrame*>& vpC
                     Eigen::Matrix<double, 7, 7> mHessian7x7;
                     int numOptMatches = Optimizer::OptimizeSim3(pKF, pKFi, vpMatchedMPs, gScm, 10, bFixedScale, mHessian7x7, true);
                     cout << "optim sim3 get size: " << numOptMatches << endl;
-                    
+
                     // 6. when optimed Scm is found, search by projection again to get more matched points 
                     if(numOptMatches >= 10)
                     {
@@ -303,7 +309,10 @@ bool CalibC2C::DetectCommonRegionsFromCand(KeyFrame* pKF, vector<KeyFrame*>& vpC
     return false;
 }
 
-int CalibC2C::OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vector<KeyFrame*>& vpKF2s, vector<vector<MapPoint*>>& vvpMatches, g2o::Sim3 &g2oS12, const float th2, const bool bFixScale)
+// vvMPs is expressed at frame of Cand
+// finalPose1 is camera1's final pose expressed at start frame
+int CalibC2C::OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vector<KeyFrame*>& vpKF2s, vector<vector<MapPoint*>>& vvpMatches,
+    g2o::Sim3 &g2oS12, const float th2, const bool bFixScale, Eigen::Isometry3f finalPose1, Eigen::Isometry3f finalPose2)
 {
     // 1. init g2o optimizer
     g2o::SparseOptimizer optimizer;
@@ -312,6 +321,7 @@ int CalibC2C::OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vecto
     g2o::BlockSolverX *solver_ptr = new g2o::BlockSolverX(linearSolver);
     g2o::OptimizationAlgorithmLevenberg *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
     optimizer.setAlgorithm(solver);
+    // optimizer.setVerbose(true);
     const float deltaHuber = sqrt(th2);
 
     // camera instrincs
@@ -355,10 +365,15 @@ int CalibC2C::OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vecto
         vpEdges12.reserve(N);
         vpEdges21.reserve(N);
 
-        const Eigen::Matrix3d R1w = pKF1->GetRotation().cast<double>();
-        const Eigen::Vector3d t1w = pKF1->GetTranslation().cast<double>();
-        const Eigen::Matrix3d R2w = pKF2->GetRotation().cast<double>();
-        const Eigen::Vector3d t2w = pKF2->GetTranslation().cast<double>();
+        Eigen::Matrix3d R1w, R2w;
+        Eigen::Vector3d t1w, t2w;
+        Eigen::Isometry3f P1w, P2w;
+        P1w.matrix() = pKF1->GetPose().matrix() * finalPose1.matrix();
+        P2w.matrix() = pKF2->GetPose().matrix() * finalPose2.matrix();
+        R1w = P1w.rotation().cast<double>();
+        R2w = P2w.rotation().cast<double>();
+        t1w = P1w.translation().cast<double>();
+        t2w = P2w.translation().cast<double>();
 
         for(int i=0; i<N; i++){
             if(!vpMatches[i])   continue;
@@ -376,16 +391,19 @@ int CalibC2C::OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vecto
 
             // mp see from camera 1
             g2o::VertexSBAPointXYZ *vPoint1 = new g2o::VertexSBAPointXYZ();
-            Eigen::Vector3d P3D1w = pMP1->GetWorldPos().cast<double>();
-            vPoint1->setEstimate(P3D1w);
+            Eigen::Vector3f P3D1w = pMP1->GetWorldPos();
+            // trans to final if need
+            P3D1w = finalPose1.inverse() * P3D1w;
+            vPoint1->setEstimate(P3D1w.cast<double>());
             vPoint1->setId(id1);
             vPoint1->setFixed(true);
             optimizer.addVertex(vPoint1);
 
             // mp see from camera 2
             g2o::VertexSBAPointXYZ *vPoint2 = new g2o::VertexSBAPointXYZ();
-            Eigen::Vector3d P3D2w = pMP2->GetWorldPos().cast<double>();
-            vPoint2->setEstimate(P3D2w);
+            Eigen::Vector3f P3D2w = pMP2->GetWorldPos();
+            P3D2w = finalPose2.inverse() * P3D2w;
+            vPoint2->setEstimate(P3D2w.cast<double>());
             vPoint2->setId(id2);
             vPoint2->setFixed(true);
             optimizer.addVertex(vPoint2);
@@ -396,7 +414,7 @@ int CalibC2C::OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vecto
             const cv::KeyPoint &kpUn1 = pKF1->mvKeysUn[i];
             obs1 << kpUn1.pt.x, kpUn1.pt.y;
 
-            g2o::EdgeSim3ProjectXYZForCalibr *e12 = new g2o::EdgeSim3ProjectXYZForCalibr(R1w,t1w);
+            g2o::EdgeSim3ProjectXYZForCalibr *e12 = new g2o::EdgeSim3ProjectXYZForCalibr(R1w, t1w);
             e12->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex *>(optimizer.vertex(id2)));
             e12->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex *>(optimizer.vertex(0)));
             e12->setMeasurement(obs1);
@@ -413,7 +431,7 @@ int CalibC2C::OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vecto
             const cv::KeyPoint &kpUn2 = pKF2->mvKeysUn[i2];
             obs2 << kpUn2.pt.x, kpUn2.pt.y;
 
-            g2o::EdgeInverseSim3ProjectXYZForCalibr *e21 = new g2o::EdgeInverseSim3ProjectXYZForCalibr(R2w,t2w);
+            g2o::EdgeInverseSim3ProjectXYZForCalibr *e21 = new g2o::EdgeInverseSim3ProjectXYZForCalibr(R2w, t2w);
             e21->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex *>(optimizer.vertex(id1)));
             e21->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex *>(optimizer.vertex(0)));
             e21->setMeasurement(obs2);
@@ -492,6 +510,18 @@ int CalibC2C::OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vecto
     return nCorrespondences - outliers;
 }
 
+void printResult(const g2o::Sim3& pose, const string& header)
+{
+    vector<float> euler = Converter::toEuler(Converter::toCvMat(pose.rotation().toRotationMatrix()));
+    cout << header << endl;
+    cout << "euler: ";
+    for(auto&& e : euler)   cout << e * todeg << " ";
+    cout << endl << "trans: ";
+    Eigen::Vector3d t = pose.translation();
+    for(int i=0; i<3; i++)  cout << t(i) << " ";
+    cout << endl;
+}
+
 void CalibC2C::RunCalib()
 {
     vector<KeyFrame*> rsrc, rdst;
@@ -542,16 +572,22 @@ void CalibC2C::RunCalib()
         cout << "no common features detected!!" << endl;
         return;
     }
-    // global optimization
-    int inliers = OptimizeSim3ForCalibr(rsrc, rdst, mmps, g2oS12, 10, false);
+    
+    g2o::Sim3 firstPose = g2oS12;
+    // global optimization at first place
+    cout << "matched kfs involve in optim size: " << rsrc.size() << endl;
+    int inliers = OptimizeSim3ForCalibr(rsrc, rdst, mmps, firstPose, 10, bFixScale);
     cout << "inliers size: " << inliers << endl;
+    printResult(firstPose, "---- first pose optim ----");
+    
+    // global optimization at final place
+    g2o::Sim3 finalPose = g2oS12;
+    Eigen::Isometry3f finalPose1, finalPose2;
+    // Twc camera expressed at world frame
+    finalPose1.matrix() = srcKFs.back()->GetPoseInverse().matrix();
+    finalPose2.matrix() = dstKFs.back()->GetPoseInverse().matrix();
+    inliers = OptimizeSim3ForCalibr(rsrc, rdst, mmps, finalPose, 10, bFixScale, finalPose1, finalPose2);
+    cout << "inliers size: " << inliers << endl;
+    printResult(firstPose, "---- final pose optim ----");
 
-    vector<float> euler = Converter::toEuler(Converter::toCvMat(g2oS12.rotation().toRotationMatrix()));
-    cout << "---- final optim ----" << endl;
-    cout << "euler: ";
-    for(auto&& e : euler)   cout << e * todeg << " ";
-    cout << endl << "trans: ";
-    Eigen::Vector3d t = g2oS12.translation();
-    for(int i=0; i<3; i++)  cout << t(i) << " ";
-    cout << endl;
 }

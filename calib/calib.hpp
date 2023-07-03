@@ -62,16 +62,17 @@ private:
 
     // source camera kfs
     vector<KeyFrame*> srcKFs;
+    vector<KeyFrame*> dstKFs;
+
     // target camera database
     SubKeyFrameDB* mpKeyFrameDB;
     ORBmatcher* matcher;
     ORBmatcher* matcherBoW;
     SubLoopClosing* mpLC;
 
-    const float todeg = 180 / M_PI;
-
     const float bestCandTh = 0.75f;
     const int bestCandNum = 10;
+    const bool bFixScale = true;
 
 public:
     CalibC2C(System* src, System* dst);
@@ -81,7 +82,9 @@ public:
     bool DetectCommonRegionsFromCand(KeyFrame* pKF, vector<KeyFrame*>& vpCand, KeyFrame* &pMatchedKF2, g2o::Sim3 &g2oScw,
         int& bestMatchesReprojNum, vector<MapPoint*> &vpMPs, vector<MapPoint*> &vpMatchedMPs);
 
-    int OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vector<KeyFrame*>& vpKF2s, vector<vector<MapPoint*>>& vvpMatches, g2o::Sim3 &g2oS12, const float th2, const bool bFixScale);
+    int OptimizeSim3ForCalibr(const vector<KeyFrame*>& vpKF1s, const vector<KeyFrame*>& vpKF2s, vector<vector<MapPoint*>>& vvpMatches,
+        g2o::Sim3 &g2oS12, const float th2, const bool bFixScale,
+        Eigen::Isometry3f finalPose1 = Eigen::Isometry3f::Identity(), Eigen::Isometry3f finalPose2 = Eigen::Isometry3f::Identity());
 
     void RunCalib();
 

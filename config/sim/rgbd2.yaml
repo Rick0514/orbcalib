@@ -1,7 +1,7 @@
 %YAML:1.0
 
 # If the LoadFile doesn't exist, the system give a message and create a new Atlas from scratch
-System.LoadAtlasFromFile: "atlas-fb"
+System.LoadAtlasFromFile: "atlas"
 
 # The store file is created from the current session, if a file with the same name exists it is deleted
 # System.SaveAtlasToFile: "atlas"

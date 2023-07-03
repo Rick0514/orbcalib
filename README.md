@@ -2,7 +2,7 @@
 
 ### Intro.
 
-Implementation of [1], different from open source code base [2], this version keeps no modification of orbslam3[3]. Calibration part is organized to folder ```/calib```.
+Implementation of [1], different from open source code base [2], this version keeps no modification to orbslam3[3]. Calibration part is contained in folder ```/calib```.
 
 ### Dependencies
 
@@ -18,6 +18,19 @@ cmake -B build
 cmake --build build -- -j8
 ```
 
+### Usage
+
+1. run orbslam to save atlas first!!
+```bash
+./build/calib/calib ./Vocabulary/ORBvoc.txt config/sim/rgbd.yaml config/sim/rgbd.yaml
+```
+
+2. load atlas to conduct calibration!!
+```
+./build/calib/calib ./Vocabulary/ORBvoc.txt config/sim/rgbd2.yaml config/sim/rgbd2.yaml
+``` 
+
+
 ### Modification to ORBSLAM3
 
 Little modifications made to ORBSLAM3 for better usage, all modifications are leading with comments: ```// modify: xxx```
@@ -25,6 +38,14 @@ Little modifications made to ORBSLAM3 for better usage, all modifications are le
 2. windows in viewer(pangolin or opencv) should be binded to different names.
 
 Keep in mind that we try to keep ORBSLAM3 untouched just like the original code.
+
+### Advantages Compared with [2]
+
+0. Easiest installation.
+1. Nearly non-intrusive to [3] with software enginearing.
+2. Ideas of [1] are all implemented at folder ```/calib```, much more organized than [2].
+3. Seems to be more robust than [2] based on my two simulation datasets.
+4. Play bag once and run calib forever leveraging the Atlas module provided by [3]
 
 ### Ref.
 
