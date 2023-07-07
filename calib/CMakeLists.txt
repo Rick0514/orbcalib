@@ -34,3 +34,13 @@ target_link_libraries(calib
    ${OpenCV_LIBS}
    ORB_SLAM3
 )
+
+add_executable(mono
+    _mono.cpp
+)
+
+target_link_libraries(mono
+   ${catkin_LIBRARIES}
+   ${OpenCV_LIBS}
+   ORB_SLAM3
+)
