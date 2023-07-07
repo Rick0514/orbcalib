@@ -20,7 +20,7 @@ cmake --build build -- -j8
 
 ### Usage
 
-1. change ```calib.yaml``` and ```cam.yaml``` to run orbslam to save atlas first!!
+1. Config ```calib.yaml``` and ```cam.yaml``` properly, run orbslam to save atlas first! Calibration performance heavily depends on orbslam's performance. 
 
 ```yaml
 # calib.yaml
@@ -48,7 +48,7 @@ Camera2.Depth: "/usb_back/depth/image_raw"
 ./build/calib/calib ./Vocabulary/ORBvoc.txt config/sim/calib.yaml config/sim/cam.yaml config/sim/cam.yaml
 ```
 
-2. load atlas to conduct calibration!!
+2. Load atlas to conduct calibration!!
 
 ```yaml
 # calib.yaml
@@ -65,7 +65,6 @@ System.LoadAtlasFromFile: "atlas"
 ./build/calib/calib ./Vocabulary/ORBvoc.txt config/sim/rgbd2.yaml config/sim/rgbd2.yaml
 ``` 
 
-
 ### Modification to ORBSLAM3
 
 Little modifications made to ORBSLAM3 for better usage, all modifications are leading with comments: ```// modify: xxx```
@@ -73,6 +72,35 @@ Little modifications made to ORBSLAM3 for better usage, all modifications are le
 2. windows in viewer(pangolin or opencv) should be binded to different names.
 
 Keep in mind that we try to keep ORBSLAM3 untouched just like the original code.
+
+
+### Performance
+
+Datasets are collected in Gazebo as ground-truth are easily obtained.
+
+1. front-side rgbd pair
+
+| front to side   | Ground-truth  | Calib |
+|  ----  | ----  | --- |
+| Rot(deg)  | [46.781, 13.995, -75.567] | [45.9, 13.405, -75.415]   |
+| Trans(m)  | [-0.307, -0.684, 0.530]   | [-0.3204, -0.7022, 0.5254] |
+
+
+2. front-back rgbd pair
+
+| front to side   | Ground-truth  | Calib |
+|  ----  | ----  | --- |
+| Rot(deg)  | [-180, 0, -180]  | [-181.189, -0.514, -179.79]   |
+| Trans(m)  | [0, 0.356, -1.930]  | [-0.087, 0.297, -1.878] |
+
+3. front-front monocular pair
+
+| front to side   | Ground-truth  | Calib |
+|  ----  | ----  | --- |
+| Rot(deg)  | [45, 0, 0]  | [44.990 -0.033 -0.0057] |
+| Trans(m)  | -  | - |
+
+For '-', monocular case scale is unable to be accurately estimated. 
 
 ### Advantages Compared with [2]
 
@@ -89,8 +117,3 @@ Keep in mind that we try to keep ORBSLAM3 untouched just like the original code.
 [2] https://github.com/jiejie567/SlamForCalib
 
 [3] https://github.com/UZ-SLAMLab/ORB_SLAM3/tree/master
-
-
-### Issue
-
-1. Mono mode has bug to be fixed!!
